@@ -5,6 +5,8 @@ import java.io.File
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 
+import scala.collection.JavaConversions._
+
 /**
   * Created by cookeem on 16/7/28.
   */
@@ -44,6 +46,17 @@ object CommonUtils {
   val configKafkaConsumeGroup = configKafka.getString("consume-group")
   val configKafkaNumPartitions = configKafka.getInt("kafka-num-partitions")
   val configKafkaReplication = configKafka.getInt("kafka-replication")
+
+  val configEs = config.getConfig("elasticsearch")
+  val configEsNodes = configEs.getString("nodes")
+  val configEsClusterName = configEs.getString("cluster-name")
+  val configEsHosts: Array[(String, Int)] = configEs.getConfigList("hosts").map { conf =>
+    (conf.getString("host"), conf.getInt("port"))
+  }.toArray
+  val configEsIndexName = configEs.getString("index-name")
+  val configEsTypeName = configEs.getString("type-name")
+  val configEsNumberOfShards = configEs.getInt("number-of-shards")
+  val configEsNumberOfReplicas = configEs.getInt("number-of-replicas")
 
   def consoleLog(logType: String, msg: String) = {
     val timeStr = new DateTime().toString("yyyy-MM-dd HH:mm:ss")

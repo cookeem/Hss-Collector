@@ -23,6 +23,20 @@ libraryDependencies ++= {
     "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.0",
     "joda-time" % "joda-time" % "2.9.4",
     "org.joda" % "joda-convert" % "1.8.1",
-    "commons-cli" % "commons-cli" % "1.3.1"
+    "commons-cli" % "commons-cli" % "1.3.1",
+    "org.elasticsearch" % "elasticsearch" % "2.3.1"
   )
 }
+
+libraryDependencies += "com.lihaoyi" % "ammonite_2.11.8" % "0.7.4"
+initialCommands in console := """ammonite.Main().run()"""
+
+//sbt使用代理
+//javaOptions in console ++= Seq(
+//  "-Dhttp.proxyHost=cmproxy-sgs.gmcc.net",
+//  "-Dhttp.proxyPort=8081"
+//)
+//javaOptions in run ++= Seq(
+//  "-Dhttp.proxyHost=cmproxy-sgs.gmcc.net",
+//  "-Dhttp.proxyPort=8081"
+//)

@@ -5,7 +5,7 @@ import java.io.File
 import akka.actor.{PoisonPill, ActorLogging, Actor}
 import cmgd.zenghj.hss.common.CommonUtils._
 import cmgd.zenghj.hss.ftp.FtpUtils
-import cmgd.zenghj.hss.kafka.KafkaUtils._
+import cmgd.zenghj.hss.es.EsUtils._
 import cmgd.zenghj.hss.redis.RedisUtils._
 
 /**
@@ -29,7 +29,7 @@ class FtpKafkaWorker  extends Actor with ActorLogging {
       var fileFailCount = 0
       if (ftpGetSuccess) {
         val absFilename = s"$localPath/$filename"
-        recordCount = fileSinkKafka(absFilename)
+        recordCount = bulkInsert(absFilename)
       } else {
         fileFailCount = 1
       }

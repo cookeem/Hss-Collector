@@ -1,15 +1,12 @@
 package cmgd.zenghj.hss.kafka
 
 import cmgd.zenghj.hss.common.CommonUtils._
-
-import java.io.{File, FileReader}
 import java.util.Properties
 
 import com.twitter.chill.KryoInjection
 import kafka.admin.AdminUtils
 import kafka.utils.ZkUtils
-import org.apache.commons.csv.CSVFormat
-import org.apache.kafka.clients.producer.{ProducerRecord, KafkaProducer}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.collection.JavaConversions._
 
@@ -17,9 +14,8 @@ import scala.collection.JavaConversions._
   * Created by cookeem on 16/7/26.
   */
 object KafkaUtils {
-  //初始化生成kafkaFilesTopic以及kafkaRecordsTopic
+  //初始化生成kafkaFilesTopic
   kafkaCreateTopic(configKafkaZkUri, configKafkaFilesTopic, configKafkaNumPartitions, configKafkaReplication)
-  kafkaCreateTopic(configKafkaZkUri, configKafkaRecordsTopic, configKafkaNumPartitions, configKafkaReplication)
 
   //把新的文件名写入kafka,记录格式为Tuple2[dir, filename]
   def filenameSinkKafka(newDirFiles: Array[(String, String)]) = {
@@ -47,46 +43,6 @@ object KafkaUtils {
         val duration = Math.round(System.currentTimeMillis() - startTime)
         consoleLog("ERROR", s"file name sink to kafka error, ${e.getMessage}, ${e.getCause} # took $duration ms")
     }
-  }
-
-  //把文件分解为记录后写入到kafka, 记录格式为Map[header, value], 返回成功的记录数
-  def fileSinkKafka(filename: String): Int = {
-    val startTime = System.currentTimeMillis()
-    var recordCount = 0
-    try {
-      val in = new FileReader(filename)
-      val records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in)
-      val props = new Properties()
-      props.put("bootstrap.servers", configKafkaBrokers)
-      props.put("acks", "all")
-      props.put("retries", 0.toString)
-      props.put("batch.size", 1024.toString)
-      props.put("linger.ms", 1.toString)
-      //props.put("buffer.memory", 33554432)
-      props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-      props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer")
-      val producer = new KafkaProducer[String, Array[Byte]](props)
-      records.foreach{ record =>
-        val recordMap: Map[String, String] = record.toMap.map{ case (k,v) => (k,v)}.toMap
-        val bytes = KryoInjection(recordMap)
-        producer.send(new ProducerRecord[String, Array[Byte]](configKafkaRecordsTopic, bytes))
-        recordCount += 1
-      }
-      in.close()
-      records.close()
-      producer.close()
-      val file = new File(filename)
-      if (file.exists()) {
-        file.delete()
-      }
-      val duration = Math.round(System.currentTimeMillis() - startTime)
-      consoleLog("SUCCESS", s"file sink to kafka success: filename = $filename $recordCount records # took $duration ms")
-    } catch {
-      case e: Throwable =>
-        val duration = Math.round(System.currentTimeMillis() - startTime)
-        consoleLog("ERROR", s"file sink to kafka error: filename = $filename, ${e.getMessage}, ${e.getCause} # took $duration ms")
-    }
-    recordCount
   }
 
   def kafkaCreateTopic(zkUri: String, topic: String, numPartitions: Int, replicationFactor: Int): Boolean = {

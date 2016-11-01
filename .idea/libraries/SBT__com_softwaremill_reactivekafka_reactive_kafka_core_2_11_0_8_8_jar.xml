@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: com.softwaremill.reactivekafka:reactive-kafka-core_2.11:0.8.8:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.softwaremill.reactivekafka/reactive-kafka-core_2.11/jars/reactive-kafka-core_2.11-0.8.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
