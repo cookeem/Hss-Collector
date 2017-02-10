@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--<base href="/manage/">-->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <title>HSS日志查询</title>
+
+    <!--<link rel="shortcut icon"  href="images/favicon.ico">-->
+    <!--font css-->
+    <link href="lib/materialize/fonts/material-design-icons/material-icons.css" rel="stylesheet">
+    <!--<link href="lib/fontawesome/css/font-awesome.min.css" rel="stylesheet">-->
+
+    <!--materialize css-->
+    <link href="lib/materialize/css/materialize.min.css" rel="stylesheet">
+
+    <!--main style sheet-->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body ng-app="app" ng-class="animation">
+<header ng-controller="headerCtl">
+    <!--顶部导航栏-->
+    <nav id="top-navbar">
+        <div class="nav-wrapper blue">
+            <a class="brand-logo center"><i class="material-icons left">search</i> HSS日志查询后台</a>
+        </div>
+    </nav>
+</header>
+<main ng-controller="contentCtl">
+    <div id="main-content" class="col s12" style="padding: 20px;">
+        <div ng-if="isLoading == true" class="row center spinner-fade">
+            <div class="preloader-wrapper big active">
+                <div class="spinner-layer spinner-blue">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+                </div>
+
+                <div class="spinner-layer spinner-red">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+                </div>
+
+                <div class="spinner-layer spinner-yellow">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+                </div>
+
+                <div class="spinner-layer spinner-green">
+                    <div class="circle-clipper left">
+                        <div class="circle"></div>
+                    </div><div class="gap-patch">
+                    <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                    <div class="circle"></div>
+                </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div ng-view class="view">
+            </div>
+        </div>
+    </div>
+</main>
+<footer class="page-footer blue-grey" style="padding-top: 0px;">
+    <div class="footer-copyright">
+        <div class="container" align="center">
+            © 2016 Copyright cmgd.zenghj.hss
+        </div>
+    </div>
+</footer>
+<!--materialize js-->
+<!--必须在angular之前加载jquery, 否则select选择结果angular不显示-->
+<script src="lib/jquery/jquery.min-1.11.3.js"></script>
+<script src="lib/materialize/js/materialize.min.js"></script>
+
+<!-- angularjs -->
+<script src="lib/angularjs/angular.min-1.5.1.js"></script>
+<script src="lib/angularjs/angular-route.min-1.5.1.js"></script>
+<script src="lib/angularjs/angular-animate.min-1.5.1.js"></script>
+
+<!--app script-->
+<script src="js/index.js"></script>
+<script src="js/result.js"></script>
+<script src="js/error.js"></script>
+</body>
+</html>

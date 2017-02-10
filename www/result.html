@@ -1,0 +1,98 @@
+<div ng-controller="resultAppCtl">
+    <div ng-show="!isLoading" class="row">
+        <div class="card-panel grey lighten-5 z-depth-1 hoverable">
+            <h5>日志查询</h5>
+            <div class="row">
+                <div class="input-field col s6 m4">
+                    <input id="FullRequest" ng-model="searchTerm.FullRequest" type="text">
+                    <label for="FullRequest" class="active">FullRequest</label>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="Operation" ng-model="searchTerm.Operation">
+                        <option value="" selected>Operation</option>
+                        <option value="MOD_LCK">MOD_LCK</option>
+                        <option value="MOD_TPLEPS">MOD_TPLEPS</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="Status" ng-model="searchTerm.Status">
+                        <option value="" selected>Status</option>
+                        <option value="SUCCESSFUL">SUCCESSFUL</option>
+                        <option value="FAILED">FAILED</option>
+                    </select>
+                </div>
+                <div class="row"></div>
+                <div class="input-field col s3 m3">
+                    <input id="fromStartTime" ng-model="formData.fromStartTime" type="text">
+                    <label for="fromStartTime">起始时间段</label>
+                </div>
+                <div class="input-field col s3 m3">
+                    <input id="toStartTime" ng-model="formData.toStartTime" type="text">
+                    <label for="toStartTime">结束时间段</label>
+                </div>
+                <div class="input-field col s6 m6">
+                    <select id="showFields" multiple ng-model="formData.showFields">
+                        <option value="" disabled selected>请选择需要显示的字段</option>
+                        <option ng-repeat="item in allFields" value="{{item}}" selected>{{item}}</option>
+                    </select>
+                </div>
+                <div class="row"></div>
+                <div class="input-field col s3 m3">
+                    <select id="count" ng-model="formData.count">
+                        <option value="" disabled selected>每页显示</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="descSort" ng-model="formData.descSort">
+                        <option value="" disabled selected>排序方式</option>
+                        <option value="1">最新排序</option>
+                        <option value="0">最早排序</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3 center-align">
+                    <a ng-click="pressSearch()" class="waves-effect waves-light btn blue"><i class="material-icons left">search</i>查 找</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <ul class="collection">
+                <li class="collection-item" ng-repeat="item in resultData">
+                    <ul class="collection with-header">
+                        <li class="collection-item">
+                            <span ng-repeat="obj in item" ng-if="obj.k == 'StartTime' || obj.k == 'Status'" >
+                                <span class="chip green white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                            </span>
+                        </li>
+                        <li ng-repeat="obj in item" ng-if="obj.k == 'FullRequest' || obj.k == 'FullResponse'" class="collection-item">
+                            <span class="chip blue white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                        </li>
+                        <li class="collection-item">
+                            <span ng-repeat="obj in item" ng-if="obj.k != 'FullRequest' && obj.k != 'FullResponse' && obj.k != 'StartTime' && obj.k != 'Status'">
+                                <span class="chip white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                            </span>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div ng-if="rscount" class="row right-align">
+            <div class="left">Total: {{rscount}} records, Pages: {{page}} / {{pages}}, Took: {{took}} ms</div>
+            <ul class="pagination">
+                <li class="waves-effect">
+                    <a href="javascript:void(0)" ng-click="pageChange(1)"><i class="material-icons">chevron_left</i></a>
+                </li>
+
+                <li ng-repeat="i in range" ng-class="(i == page) ? 'active blue' : ''">
+                    <a href="javascript:void(0)" ng-click="pageChange(i)">{{i}}</a>
+                </li>
+                <li class="waves-effect">
+                    <a href="javascript:void(0)" ng-click="pageChange(pages)"><i class="material-icons">chevron_right</i></a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</div>

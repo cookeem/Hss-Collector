@@ -65,7 +65,7 @@ class CollectorMaster extends TraitClusterActor {
         log.error(s"Unhandled message: ${e.getClass} : $e ")
     }
 
-  val ftpUtils = new FtpUtils(configFtpHost, configFtpPort, configFtpUser, configFtpPass)
+  val ftpUtils = FtpUtils(configFtpHost, configFtpPort, configFtpUser, configFtpPass)
 
   //从ftp上获取最新的dir列表
   //返回: Array[dir]

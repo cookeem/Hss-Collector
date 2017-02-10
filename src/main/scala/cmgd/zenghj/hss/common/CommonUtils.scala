@@ -4,6 +4,7 @@ import java.io.File
 
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
+import redis.clients.jedis.HostAndPort
 
 import scala.collection.JavaConversions._
 
@@ -33,10 +34,13 @@ object CommonUtils {
   val configFtpRoot = configFtp.getString("ftp-root")
   val configFtpLocalRoot = configFtp.getString("ftp-localroot")
 
+  val configHttp = config.getConfig("http")
+  val configHttpPort = configHttp.getInt("port")
+
   val configRedis = config.getConfig("redis")
-  val configRedisHost = configRedis.getString("redis-host")
-  val configRedisPort = configRedis.getInt("redis-port")
-  var configRedisPass = configRedis.getString("redis-pass")
+  val configRedisHosts = configRedis.getConfigList("hosts").map { cfg =>
+    new HostAndPort(cfg.getString("redis-host"), cfg.getInt("redis-port"))
+  }.toSet
 
   val configKafka = config.getConfig("kafka")
   val configKafkaZkUri = configKafka.getString("zookeeper-uri")
@@ -48,7 +52,6 @@ object CommonUtils {
   val configKafkaReplication = configKafka.getInt("kafka-replication")
 
   val configEs = config.getConfig("elasticsearch")
-  val configEsNodes = configEs.getString("nodes")
   val configEsClusterName = configEs.getString("cluster-name")
   val configEsHosts: Array[(String, Int)] = configEs.getConfigList("hosts").map { conf =>
     (conf.getString("host"), conf.getInt("port"))
@@ -61,5 +64,27 @@ object CommonUtils {
   def consoleLog(logType: String, msg: String) = {
     val timeStr = new DateTime().toString("yyyy-MM-dd HH:mm:ss")
     println(s"[$logType] $timeStr: $msg")
+  }
+
+  //从参数Map中获取Int
+  def paramsGetInt(params: Map[String, String], key: String, default: Int): Int = {
+    var ret = default
+    if (params.contains(key)) {
+      try {
+        ret = params(key).toInt
+      } catch {
+        case e: Throwable =>
+      }
+    }
+    ret
+  }
+
+  //从参数Map中获取String
+  def paramsGetString(params: Map[String, String], key: String, default: String): String = {
+    var ret = default
+    if (params.contains(key)) {
+      ret = params(key)
+    }
+    ret
   }
 }

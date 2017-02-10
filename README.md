@@ -44,17 +44,13 @@ HSS-Collector
 ## 运行说明:
 2551 和 2552 端口为akka集群的seed nodes端口, 务必先启动
 
-1. 先启动master,用于获取ftp目录下的文件夹. master只开一个集群进程: 
+1. 启动master以及router。master用于获取ftp目录下的文件夹，router用于获取ftp目录下的文件列表清单。（注意，只能启动一个）
 
-``cmgd.zenghj.hss.HssCollector -s master -p 2551``
+`` sbt "run-main cmgd.zenghj.hss.HssCollector -s master" ``
 
-2. 再启动router,用于获取ftp目录下的文件清单. router可以开多个集群进程,提升新文件发现效率:
+2. 启动worker,获取ftp文件,并且把文件进行记录入库kafka. worker可以开多个集群进程, 提升入库效率。
 
-``cmgd.zenghj.hss.HssCollector -s router -p 2552``
-
-3. 最后启动worker,获取ftp文件,并且把文件进行记录入库kafka. worker可以开多个集群进程, 提升入库效率:
-
-``cmgd.zenghj.hss.HssCollector -s worker -p 2553``
+`` sbt "run-main cmgd.zenghj.hss.HssCollector -s worker" ``
 
 ## 异常恢复说明:
 当worker节点出现异常的时候, 会导致出现异常的worker节点已经从kafka获取的文件列表的处理会终止, 导致部分文件未处理.
@@ -65,3 +61,25 @@ master启动的时候会检查是否有文件从kafka读取了但是还没有来
 
 ## 启动worker之后千万不要启动master,否则会出现文件重复处理
 
+
+
+## 1. 运行
+``sbt "run-main cmgd.zenghj.hss.HssRestful"``
+
+## 2. 浏览器访问
+``http://localhost:9870``
+
+
+## 3. 重置
+``
+http DELETE localhost:9200/hss
+
+kafka-topics.sh --zookeeper localhost:2181 --list
+kafka-topics.sh --zookeeper localhost:2181 --delete --topic hss-files-topic
+
+./create-cluster stop
+./create-cluster clean
+
+./create-cluster start
+echo 'yes' | ./create-cluster create
+``
