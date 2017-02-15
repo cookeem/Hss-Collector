@@ -53,6 +53,8 @@ object CommonUtils {
 
   val configEs = config.getConfig("elasticsearch")
   val configEsClusterName = configEs.getString("cluster-name")
+  val configEsUserName = configEs.getString("es-username")
+  val configEsPassword = configEs.getString("es-password")
   val configEsHosts: Array[(String, Int)] = configEs.getConfigList("hosts").map { conf =>
     (conf.getString("host"), conf.getInt("port"))
   }.toArray

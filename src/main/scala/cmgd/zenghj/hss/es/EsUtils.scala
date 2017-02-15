@@ -2,7 +2,7 @@ package cmgd.zenghj.hss.es
 
 import java.io.FileReader
 
-import cmgd.zenghj.hss.common.CommonUtils._
+import cmgd.zenghj.hss.common.CommonUtils.{configEsPassword, _}
 import java.net.InetAddress
 
 import org.elasticsearch.common.xcontent.XContentFactory._
@@ -14,7 +14,7 @@ import org.elasticsearch.common.xcontent.{XContentBuilder, XContentFactory}
 import org.elasticsearch.index.query.{BoolQueryBuilder, QueryBuilders}
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder
 import org.elasticsearch.search.sort.SortOrder
-import org.elasticsearch.transport.client.PreBuiltTransportClient
+import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient
 import play.api.libs.json.{JsValue, Json}
 
 import scala.collection.JavaConversions._
@@ -23,15 +23,17 @@ import scala.collection.JavaConversions._
   * Created by cookeem on 16/11/1.
   */
 object EsUtils {
-  var client: PreBuiltTransportClient = _
+  var client: PreBuiltXPackTransportClient = _
 
   try {
     //创建client
-    val settings = Settings
-      .builder()
-      .put("cluster.name", configEsClusterName).build()
-    client = new PreBuiltTransportClient(settings)
-
+    Settings.builder().put()
+    val settingsBuilder = Settings.builder().put("cluster.name", configEsClusterName)
+    if (configEsUserName != "" && configEsPassword != "") {
+      settingsBuilder.put("xpack.security.user", s"$configEsUserName:$configEsPassword")
+    }
+    val settings = settingsBuilder.build()
+    client = new PreBuiltXPackTransportClient(settings)
     configEsHosts.foreach { case (host, port) =>
       client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(host), port))
     }

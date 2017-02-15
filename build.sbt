@@ -3,6 +3,9 @@ name := "hss-collector"
 version := "1.0"
 
 scalaVersion := "2.11.8"
+
+resolvers += "elasticsearch maven" at "https://artifacts.elastic.co/maven"
+
 libraryDependencies ++= {
   val akkaV = "2.4.16"
   val akkaHttpV = "10.0.3"
@@ -12,7 +15,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "com.typesafe.akka" %% "akka-cluster-metrics" % akkaV,
     "com.typesafe.akka" %% "akka-stream" % akkaV,
-//    "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+    //"com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-http" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,
     "com.softwaremill.reactivekafka" %% "reactive-kafka-core" % "0.8.8",
@@ -32,6 +35,7 @@ libraryDependencies ++= {
     "org.joda" % "joda-convert" % "1.8.1",
     "commons-cli" % "commons-cli" % "1.3.1",
     "org.elasticsearch.client" % "transport" % "5.2.0",
+    "org.elasticsearch.client" % "x-pack-transport" % "5.2.0",
     "com.typesafe.play" %% "play-json" % "2.5.12"
   )
 }

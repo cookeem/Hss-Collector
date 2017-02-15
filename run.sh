@@ -1,1 +1,2 @@
-java -classpath 'lib/*' cmgd.zenghj.hss.HssCollector
+#!/bin/bash
+java -classpath "hss-lib/*" $*

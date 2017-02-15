@@ -69,7 +69,6 @@ master启动的时候会检查是否有文件从kafka读取了但是还没有来
 ## 2. 浏览器访问
 ``http://localhost:9870``
 
-
 ## 3. 重置
 ``
 http DELETE localhost:9200/hss
