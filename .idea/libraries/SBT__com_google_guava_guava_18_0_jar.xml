@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="SBT: com.google.guava:guava:18.0:jar">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../hadoop/activator-1.3.6/repository/com.google.guava/guava/18.0/bundles/guava.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

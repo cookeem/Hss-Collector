@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="SBT: org.elasticsearch:elasticsearch:2.3.1:jar">
-    <CLASSES>
-      <root url="jar://$USER_HOME$/.ivy2/cache/org.elasticsearch/elasticsearch/jars/elasticsearch-2.3.1.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

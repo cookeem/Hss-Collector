@@ -90,6 +90,6 @@ object HssRestful extends App {
     }(innerRejectionsHandled)(ctx)
   }
 
-  Http().bindAndHandle(logDuration(route), "localhost", configHttpPort)
-  consoleLog("INFO", s"Http server started at http://localhost:$configHttpPort")
+  Http().bindAndHandle(logDuration(route), "0.0.0.0", configHttpPort)
+  consoleLog("INFO", s"Http server started at http://0.0.0.0:$configHttpPort")
 }
