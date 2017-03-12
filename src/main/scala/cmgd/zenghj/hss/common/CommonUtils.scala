@@ -14,39 +14,30 @@ import scala.collection.JavaConversions._
 object CommonUtils {
   val config = ConfigFactory.parseFile(new File("conf/application.conf"))
 
-  val configMaster = config.getConfig("cluster-router.master")
-  val configMasterScheduleInterval = configMaster.getInt("schedule-interval")
-  val configMasterStatInterval = configMaster.getInt("stat-interval")
-
-  val configListFileRouter = config.getConfig("cluster-router.listfile-router")
-  val configListFileRouterPoolSize = configListFileRouter.getInt("pool-size")
-  val configListFileRouterLowBound = configListFileRouter.getInt("lower-bound")
-  val configListFileRouterUpperBound = configListFileRouter.getInt("upper-bound")
-
-  val configGetFileWorkerConfig = config.getConfig("cluster-router.getfile-worker")
-  val configGetFileWorkerStreamCount = configGetFileWorkerConfig.getInt("stream-count")
+  val configCollectorMaster = config.getConfig("collector-master")
+  val configMasterScheduleInterval = configCollectorMaster.getInt("schedule-interval")
+  val configMasterStatInterval = configCollectorMaster.getInt("stat-interval")
 
   val configFtp = config.getConfig("ftp")
   val configFtpHost = configFtp.getString("ftp-host")
   val configFtpPort = configFtp.getInt("ftp-port")
   val configFtpUser = configFtp.getString("ftp-user")
   val configFtpPass = configFtp.getString("ftp-pass")
-  val configFtpRoot = configFtp.getString("ftp-root")
-  val configFtpLocalRoot = configFtp.getString("ftp-localroot")
+  val configFtpRemoteRoot = configFtp.getString("ftp-remote-root")
+  var configFtpLocalRoot = configFtp.getString("ftp-local-root")
 
   val configHttp = config.getConfig("http")
   val configHttpPort = configHttp.getInt("port")
 
   val configRedis = config.getConfig("redis")
   val configRedisHosts = configRedis.getConfigList("hosts").map { cfg =>
-    new HostAndPort(cfg.getString("redis-host"), cfg.getInt("redis-port"))
-  }.toSet
+    (cfg.getString("redis-host"), cfg.getInt("redis-port"), cfg.getString("redis-password"))
+  }
 
   val configKafka = config.getConfig("kafka")
   val configKafkaZkUri = configKafka.getString("zookeeper-uri")
   val configKafkaBrokers = configKafka.getString("brokers-list")
   val configKafkaFilesTopic = configKafka.getString("kafka-files-topic")
-  val configKafkaRecordsTopic = configKafka.getString("kafka-records-topic")
   val configKafkaConsumeGroup = configKafka.getString("consume-group")
   val configKafkaNumPartitions = configKafka.getInt("kafka-num-partitions")
   val configKafkaReplication = configKafka.getInt("kafka-replication")
@@ -59,7 +50,8 @@ object CommonUtils {
     (conf.getString("host"), conf.getInt("port"))
   }.toArray
   val configEsIndexName = configEs.getString("index-name")
-  val configEsTypeName = configEs.getString("type-name")
+  val configEsTypeNameEric = configEs.getString("type-name-eric")
+  val configEsTypeNameHuawei = configEs.getString("type-name-huawei")
   val configEsNumberOfShards = configEs.getInt("number-of-shards")
   val configEsNumberOfReplicas = configEs.getInt("number-of-replicas")
 

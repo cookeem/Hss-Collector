@@ -3,6 +3,8 @@ package cmgd.zenghj.hss
 /**
   * Created by cookeem on 16/11/4.
   */
+import java.net.InetAddress
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
@@ -11,6 +13,8 @@ import akka.http.scaladsl.server.{RejectionHandler, Route, StandardRoute}
 import akka.stream.ActorMaterializer
 import cmgd.zenghj.hss.common.CommonUtils._
 import cmgd.zenghj.hss.restful.RestUtils._
+import cmgd.zenghj.hss.es.EsUtils._
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 
 import scala.async.Async._
@@ -19,25 +23,30 @@ import scala.async.Async._
   * Created by cookeem on 16/8/10.
   */
 object HssRestful extends App {
-  implicit val system = ActorSystem("hss-restful", config)
+
+  val hostName = InetAddress.getLocalHost.getHostName
+  val configHttp = ConfigFactory.parseString(s"""akka.remote.netty.tcp.hostname="$hostName"""")
+    .withFallback(ConfigFactory.parseString(s"akka.remote.netty.tcp.port=0"))
+    .withFallback(config)
+  implicit val system = ActorSystem("hss-cluster", configHttp)
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
 
   val route =
     get {
       pathSingleSlash {
-        redirect("/index.html#!/result", StatusCodes.PermanentRedirect)
+        redirect("/index.html", StatusCodes.PermanentRedirect)
       }
     } ~
-      queryRoute ~
-      get {
-        pathPrefix("") {
-          getFromDirectory("www")
-        }
-      } ~
-      extractRequest { request =>
-        badRequest(request)
+    queryRoute ~
+    get {
+      pathPrefix("") {
+        getFromDirectory("www")
       }
+    } ~
+    extractRequest { request =>
+      badRequest(request)
+    }
 
   def badRequest(request: HttpRequest): StandardRoute = {
     val method = request.method.value.toLowerCase
@@ -89,6 +98,19 @@ object HssRestful extends App {
       resp
     }(innerRejectionsHandled)(ctx)
   }
+
+  //等待elasticsearch连接成功
+  var probeEs = esIndexInit()
+  while (probeEs != "") {
+    consoleLog("ERROR", s"Connect elasticsearch error, wait 5 seconds to reconnect!")
+    Thread.sleep(5 * 1000)
+    esConn = esConnect()
+    esClient = esConn._1
+    esBulkProcessor = esConn._2
+    esBulkRef = esConn._3
+    probeEs = esIndexInit()
+  }
+  consoleLog("SUCCESS", s"Connect elasticsearch success")
 
   Http().bindAndHandle(logDuration(route), "0.0.0.0", configHttpPort)
   consoleLog("INFO", s"Http server started at http://0.0.0.0:$configHttpPort")

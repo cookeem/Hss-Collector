@@ -3,16 +3,9 @@
  */
 var app = angular.module('app', ['ngRoute', 'ngAnimate']);
 
-app.run(function($timeout) {
-    //初始化materialize select
-    $timeout(function() {
-        $('select').material_select();
-    }, 100);
-});
-
 app.config(function($routeProvider, $locationProvider) {
     $routeProvider
-        .when('/result', {
+        .when('/result/:querystring', {
             templateUrl: 'result.html',
             controller: 'contentCtl',
             animation: 'animation-slideleft'
@@ -22,7 +15,7 @@ app.config(function($routeProvider, $locationProvider) {
             controller: 'contentCtl',
             animation: 'animation-slideleft'
         })
-        .otherwise({redirectTo: '/error'});
+        .otherwise({redirectTo: '/result/eric'});
     //使用#!作为路由前缀
     $locationProvider.html5Mode(false).hashPrefix('!');
 });

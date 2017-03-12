@@ -1,7 +1,7 @@
 /**
  * Created by cookeem on 16/6/3.
  */
-app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http) {
+app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http, $routeParams) {
     $scope.took = 0;
     $scope.resultData = [];
     $scope.rscount = 0;
@@ -11,52 +11,97 @@ app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http) {
     $scope.range = [];
     $scope.showpages = 9;
 
-    //所有显示的字段
-    $scope.allFields = [
-        "FullRequest",
-        "FullResponse",
-        "StartTime",
-        "Target",
-        "Status",
-        "Operation",
-        "Protocol",
-        "LogType",
-        "ResponseCode",
-        "ExecuteTime",
-        "TransactionId",
-        "SubLogId",
-        "Hostname",
-        "User",
-        "RootLogId",
-        "Instance"
-    ];
+    $scope.neType = $routeParams.querystring;
+    if ($scope.neType == "huawei") {
+        //所有显示的字段
 
-    $scope.searchTerm = {
-        "FullRequest" : "ISDN",
-        "FullResponse" : "",
-        //"StartTime" : "",
-        "Target" : "",
-        "Status" : "",
-        "Operation" : "",
-        "Protocol" : "",
-        "LogType" : "",
-        "ResponseCode" : "",
-        "ExecuteTime" : "",
-        "TransactionId" : "",
-        "SubLogId" : "",
-        "Hostname" : "",
-        "User" : "",
-        "RootLogId" : "",
-        "Instance" : ""
-    };
+        $scope.allFields = [
+            "SERIAL_NO",
+            "HLR_INDEX",
+            "OPERATOR_NAME",
+            "OPERATION_TIME",
+            "MML_COMMAND",
+            "CMDRESULT",
+            "BATCH_TASK_ID",
+            "COMMAND_NO",
+            "MSG_TYPE",
+            "IMSI_NO",
+            "MSISDN_NO",
+            "ERRORCODE"
+        ];
 
-    $scope.formData = {
-        showFields: $scope.allFields,
-        count: "",
-        descSort: "",
-        fromStartTime: "",
-        toStartTime: ""
-    };
+        $scope.searchTerm = {
+            "SERIAL_NO": "",
+            "HLR_INDEX": "",
+            "OPERATOR_NAME": "",
+            //"OPERATION_TIME": "",
+            "MML_COMMAND": "",
+            "CMDRESULT": "",
+            "BATCH_TASK_ID": "",
+            "COMMAND_NO": "",
+            "MSG_TYPE": "",
+            "IMSI_NO": "",
+            "MSISDN_NO": "",
+            "ERRORCODE": ""
+        };
+
+        $scope.formData = {
+            searchType: 1,
+            showFields: $scope.allFields,
+            count: "",
+            descSort: "",
+            fromStartTime: "",
+            toStartTime: ""
+        };
+    } else {
+        //所有显示的字段
+        $scope.allFields = [
+            "FullRequest",
+            "FullResponse",
+            "StartTime",
+            "Target",
+            "Status",
+            "Operation",
+            "Protocol",
+            "LogType",
+            "ResponseCode",
+            "ExecuteTime",
+            "TransactionId",
+            "SubLogId",
+            "Hostname",
+            "User",
+            "RootLogId",
+            "Instance"
+        ];
+
+        $scope.searchTerm = {
+            "FullRequest" : "ISDN",
+            "FullResponse" : "",
+            //"StartTime" : "",
+            "Target" : "",
+            "Status" : "",
+            "Operation" : "",
+            "Protocol" : "",
+            "LogType" : "",
+            "ResponseCode" : "",
+            "ExecuteTime" : "",
+            "TransactionId" : "",
+            "SubLogId" : "",
+            "Hostname" : "",
+            "User" : "",
+            "RootLogId" : "",
+            "Instance" : ""
+        };
+
+        $scope.formData = {
+            searchType: 0,
+            showFields: $scope.allFields,
+            count: "",
+            descSort: "",
+            fromStartTime: "",
+            toStartTime: ""
+        };
+    }
 
     $scope.submitSearch = function() {
         var termArray = $.map($scope.searchTerm, function(v, k) {
@@ -67,6 +112,7 @@ app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http) {
             $scope.count = $scope.formData.count;
         }
         $scope.searchData = {
+            searchType: $scope.formData.searchType,
             fields: $scope.formData.showFields.join(),
             page: $scope.page,
             count: $scope.formData.count,
@@ -90,7 +136,7 @@ app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http) {
                 $rootScope.errbtn = "返 回";
                 window.location.href = "index.html#!/error";
             }
-            if (response.data.data) {
+            if (response.data) {
                 $scope.resultData = response.data.data.map(function(obj) {
                     return $.map(obj, function(v, k) {
                         var str = html_encode(v).replace(/##begin##/g, '<span class="chip red white-text">').replace(/##end##/g,'</span>');
@@ -153,6 +199,10 @@ app.controller('resultAppCtl', function($scope, $rootScope, $timeout, $http) {
         $scope.page = 1;
         $scope.submitSearch();
     };
+
+    $timeout(function() {
+        $('select').material_select();
+    }, 100);
 
     $scope.submitSearch();
 });

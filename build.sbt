@@ -7,7 +7,7 @@ scalaVersion := "2.11.8"
 resolvers += "elasticsearch maven" at "https://artifacts.elastic.co/maven"
 
 libraryDependencies ++= {
-  val akkaV = "2.4.16"
+  val akkaV = "2.4.17"
   val akkaHttpV = "10.0.3"
   Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaV,
@@ -18,7 +18,8 @@ libraryDependencies ++= {
     //"com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-http" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpV,
-    "com.softwaremill.reactivekafka" %% "reactive-kafka-core" % "0.8.8",
+    "com.typesafe.akka" %% "akka-stream-kafka" % "0.14",
+    "com.101tec" % "zkclient" % "0.10",
     //必须exclude log4j以及slf4j，否则会直接throw冲突异常
     "org.apache.kafka" %% "kafka" % "0.10.1.1" exclude("log4j", "log4j") exclude("org.slf4j", "slf4j-log4j12"),
     //必须把log4j-api和log4j-to-slf4j加进来，并且版本必须为2.6.2

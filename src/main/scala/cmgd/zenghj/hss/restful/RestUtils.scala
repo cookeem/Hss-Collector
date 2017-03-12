@@ -16,6 +16,7 @@ object RestUtils {
   def queryRoute(implicit ec: ExecutionContext) = post {
     path("json" / "query") {
       formFieldMap { params =>
+        val searchType = paramsGetInt(params, "searchType", 0)
         val fieldsStr = paramsGetString(params, "fields", "") //逗号分隔格式
         val page = paramsGetInt(params, "page", 1)
         val count = paramsGetInt(params, "count", 10)
@@ -35,6 +36,7 @@ object RestUtils {
             (field, term)
           }
           val json = esQuery(
+            searchType = searchType,
             fields = fields,
             page = page,
             count = count,
@@ -47,7 +49,7 @@ object RestUtils {
           HttpEntity(ContentTypes.`application/json`, jsonBody)
         } recover {
           case e: Throwable =>
-            val errmsg = s"query error: fieldsStr = $fieldsStr, fromStartTime = $fromStartTime, toStartTime = $toStartTime, termFieldsStr = $termFieldsStr. ${e.getMessage}, ${e.getCause}, ${e.getClass}, ${e.getStackTrace.mkString("\n")}"
+            val errmsg = s"query error: fieldsStr = $fieldsStr, fromStartTime = $fromStartTime, toStartTime = $toStartTime, termFieldsStr = $termFieldsStr. ${e.getClass}, ${e.getMessage}, ${e.getCause}"
             consoleLog("ERROR", errmsg)
             val json = Json.obj(
               "errmsg" -> errmsg

@@ -1,10 +1,10 @@
 package cmgd.zenghj.hss.actor
 
-import akka.actor.{Address, ActorLogging, Actor}
+import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
+import cmgd.zenghj.hss.common.CommonUtils.consoleLog
 
-import scala.collection.JavaConversions._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Try
@@ -17,11 +17,13 @@ trait TraitClusterActor extends Actor with ActorLogging {
 
   override def preStart(): Unit = {
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents, classOf[MemberEvent], classOf[UnreachableMember])
+    consoleLog("INFO", s"actor start! ${self.path}")
   }
 
   override def postStop(): Unit = {
     cluster.unsubscribe(self)
     context.system.terminate()
+    consoleLog("INFO", s"actor stop! ${self.path}")
   }
 
   def eventReceive: Receive = {
@@ -30,13 +32,12 @@ trait TraitClusterActor extends Actor with ActorLogging {
     case MemberJoined(member) =>
       log.info(s"Member joined: ${member.address}")
     case UnreachableMember(member) =>
-      log.warning(s"Member Unreachable: ${member.address}")
+      log.error(s"Member Unreachable: ${member.address}")
       cluster.leave(member.address)
     case MemberExited(member) =>
-      log.warning(s"Member is Exited: ${member.address}")
-    case DirectiveStopMember =>
-      cluster.down(cluster.selfAddress)
-      log.error(s"Member is stop! ${cluster.selfAddress}")
+      log.error(s"Member is Exited: ${member.address}")
+    case MemberLeft(member) =>
+      log.error(s"Member is Left: ${member.address}")
   }
 
   //定义集群member removed关闭事件

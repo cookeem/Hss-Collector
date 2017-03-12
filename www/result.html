@@ -1,8 +1,12 @@
 <div ng-controller="resultAppCtl">
     <div ng-show="!isLoading" class="row">
         <div class="card-panel grey lighten-5 z-depth-1 hoverable">
-            <h5>日志查询</h5>
+            <h5><span ng-if="neType == 'eric'">爱立信日志查询</span><span ng-if="neType == 'huawei'">华为日志查询</span></h5>
             <div class="row">
+                <a href="#!/result/eric" class="waves-effect waves-light btn green">爱立信日志查询</a>
+                <a href="#!/result/huawei" class="waves-effect waves-light btn red">华为日志查询</a>
+            </div>
+            <div ng-if="neType == 'eric'" class="row">
                 <div class="input-field col s6 m4">
                     <input id="FullRequest" ng-model="searchTerm.FullRequest" type="text">
                     <label for="FullRequest" class="active">FullRequest</label>
@@ -56,9 +60,64 @@
                     <a ng-click="pressSearch()" class="waves-effect waves-light btn blue"><i class="material-icons left">search</i>查 找</a>
                 </div>
             </div>
+
+            <div ng-if="neType == 'huawei'" class="row">
+                <div class="input-field col s6 m4">
+                    <input id="MSISDN_NO" ng-model="searchTerm.MSISDN_NO" type="text">
+                    <label for="MSISDN_NO" class="active">MSISDN_NO</label>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="MML_COMMAND" ng-model="searchTerm.MML_COMMAND">
+                        <option value="" selected>全部</option>
+                        <option value="TPLID">模板停开机</option>
+                        <option value="PROV">非模板开机</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="CMDRESULT" ng-model="searchTerm.CMDRESULT">
+                        <option value="" selected>全部</option>
+                        <option value="0">失败</option>
+                        <option value="1">成功</option>
+                    </select>
+                </div>
+                <div class="row"></div>
+                <div class="input-field col s3 m3">
+                    <input id="fromStartTime" ng-model="formData.fromStartTime" type="text">
+                    <label for="fromStartTime">起始时间段</label>
+                </div>
+                <div class="input-field col s3 m3">
+                    <input id="toStartTime" ng-model="formData.toStartTime" type="text">
+                    <label for="toStartTime">结束时间段</label>
+                </div>
+                <div class="input-field col s6 m6">
+                    <select id="showFields" multiple ng-model="formData.showFields">
+                        <option value="" disabled selected>请选择需要显示的字段</option>
+                        <option ng-repeat="item in allFields" value="{{item}}" selected>{{item}}</option>
+                    </select>
+                </div>
+                <div class="row"></div>
+                <div class="input-field col s3 m3">
+                    <select id="count" ng-model="formData.count">
+                        <option value="" disabled selected>每页显示</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3">
+                    <select id="descSort" ng-model="formData.descSort">
+                        <option value="" disabled selected>排序方式</option>
+                        <option value="1">最新排序</option>
+                        <option value="0">最早排序</option>
+                    </select>
+                </div>
+                <div class="input-field col s3 m3 center-align">
+                    <a ng-click="pressSearch()" class="waves-effect waves-light btn blue"><i class="material-icons left">search</i>查 找</a>
+                </div>
+            </div>
         </div>
         <div class="row">
-            <ul class="collection">
+            <ul ng-if="neType == 'eric'" class="collection">
                 <li class="collection-item" ng-repeat="item in resultData">
                     <ul class="collection with-header">
                         <li class="collection-item">
@@ -71,6 +130,26 @@
                         </li>
                         <li class="collection-item">
                             <span ng-repeat="obj in item" ng-if="obj.k != 'FullRequest' && obj.k != 'FullResponse' && obj.k != 'StartTime' && obj.k != 'Status'">
+                                <span class="chip white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                            </span>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul ng-if="neType == 'huawei'" class="collection">
+                <li class="collection-item" ng-repeat="item in resultData">
+                    <ul class="collection with-header">
+                        <li class="collection-item">
+                            <span ng-repeat="obj in item" ng-if="obj.k == 'MSISDN_NO' || obj.k == 'OPERATION_TIME' || obj.k == 'CMDRESULT'" >
+                                <span class="chip green white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                            </span>
+                        </li>
+                        <li ng-repeat="obj in item" ng-if="obj.k == 'MML_COMMAND'" class="collection-item">
+                            <span class="chip blue white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
+                        </li>
+                        <li class="collection-item">
+                            <span ng-repeat="obj in item" ng-if="obj.k != 'MSISDN_NO' && obj.k != 'MML_COMMAND' && obj.k != 'OPERATION_TIME' && obj.k != 'CMDRESULT'">
                                 <span class="chip white-text">{{obj.k}} :</span> <span ng-bind-html="obj.v | trustHtml"></span>
                             </span>
                         </li>
