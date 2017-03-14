@@ -1,6 +1,6 @@
 HSS-Collector
 ========
-- 基于Akka Cluster2.4.17和Akka Stream2.4.17以及Redis和Kafka-0.10.1.1、elasticsearch5.2.0的ftp日志文件采集和记录入库集群
+- 基于Akka Stream2.4.17以及Redis和Kafka-0.10.1.1、elasticsearch5.2.0的ftp日志文件采集和记录入库集群
 - 支持节点自动发现以及roundRobin负载分配, 支持节点故障任务自动转移, 支持分布式采集
 - 支持ftp目录为三级目录,日志文件为包含header的RFC.RFC4180的csv文件的kafka入库
 
