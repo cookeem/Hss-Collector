@@ -75,3 +75,11 @@ kafka-topics.sh --zookeeper localhost:2181 --delete --topic hss-files-topic
 # 清除elasticsearch数据
 http DELETE localhost:9200/hss
 ```
+
+### 界面截图
+
+![查询界面](docs/screen1.png)
+
+---
+
+![查询界面](docs/screen2.png)
