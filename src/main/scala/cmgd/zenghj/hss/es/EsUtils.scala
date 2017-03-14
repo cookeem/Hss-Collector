@@ -1,18 +1,15 @@
 package cmgd.zenghj.hss.es
 
-import java.io.StringReader
+import java.io.FileReader
 
 import cmgd.zenghj.hss.common.CommonUtils._
 import java.net.InetAddress
-import java.nio.file.Paths
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
-import akka.stream.scaladsl.{FileIO, Flow, Framing, Sink, Source}
-import akka.util.ByteString
-import cmgd.zenghj.hss.actor.DirectiveRecordCount
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import org.elasticsearch.common.xcontent.XContentFactory._
-import org.apache.commons.csv.{CSVFormat, CSVParser}
+import org.apache.commons.csv.CSVFormat
 import org.elasticsearch.action.bulk.{BulkProcessor, BulkRequest, BulkResponse}
 import org.elasticsearch.action.bulk.BulkProcessor.Listener
 import org.elasticsearch.action.index.IndexRequest
@@ -28,8 +25,6 @@ import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient
 import play.api.libs.json.{JsValue, Json}
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Future
-import scala.util.{Failure, Success}
 
 /**
   * Created by cookeem on 16/11/1.
@@ -68,7 +63,7 @@ object EsUtils {
           override def afterBulk(l: Long, bulkRequest: BulkRequest, throwable: Throwable) = {}
         })
         .setBulkActions(1000)
-        .setConcurrentRequests(5)
+        .setConcurrentRequests(10)
         .setFlushInterval(TimeValue.timeValueSeconds(5))
         .build()
 
@@ -241,145 +236,123 @@ object EsUtils {
     errmsg
   }
 
-  def esBulkInsertEric(filenameTxt: String, dir: String, filename: String, ref: ActorRef): Unit = {
-    implicit val ec = system.dispatcher
-
+  def esBulkInsertEric(filenameTxt: String): Int = {
     val startTime = System.currentTimeMillis()
     var recordCount = 0
     var errmsg = ""
     if (esClient != null) {
       try {
-        val headerStr = "LogType(v1.1),RootLogId,SubLogId,TransactionId,Instance,Operation,Status,User,Hostname,Protocol,Target,StartTime,ExecuteTime,ResponseCode,FullRequest,FullResponse,ReplayLogId"
-        val headers = headerStr.split(",")
+        val in = new FileReader(filenameTxt)
+        val records = CSVFormat.RFC4180.withFirstRecordAsHeader().parse(in)
         var i = 0
-        val source = FileIO.fromPath(Paths.get(filenameTxt)).via(
-          Framing.delimiter(ByteString("\"\n"), maximumFrameLength = 1024 * 1024)
-        ).map(_.utf8String).map { str =>
+        records.foreach { csvRecord =>
           i += 1
-          if (i % 10000 == 0) {
-            println(s"process $i record")
+          val record = csvRecord.toMap
+          val filter = record.containsKey("Operation") && (
+            record("Operation") == "MOD_LCK" || record("Operation") == "MOD_TPLEPS"
+            )
+          if (filter) {
+            val jsonContent: XContentBuilder = jsonBuilder().startObject()
+            record.foreach { case (k, v) =>
+              jsonContent.field(k, v)
+            }
+            jsonContent.endObject()
+            esBulkRef ! (configEsTypeNameEric, jsonContent)
+            recordCount += 1
           }
-          var recordStr = s"""$str""""
-          if (i == 1) {
-            recordStr = recordStr.replace(s"$headerStr\n", "")
-          }
-          val in = new StringReader(recordStr)
-          CSVFormat.RFC4180.withHeader(headers: _*).parse(in).head.toMap
-        }.filter { record =>
-          record("Operation") == "MOD_LCK" || record("Operation") == "MOD_TPLEPS"
         }
+        records.close()
+        in.close()
 
-        val futureBulk = source.runForeach { record =>
-          val jsonContent: XContentBuilder = jsonBuilder().startObject()
-          record.foreach { case (k, v) =>
-            jsonContent.field(k, v)
-          }
-          jsonContent.endObject()
-          esBulkRef ! (configEsTypeNameEric, jsonContent)
-          recordCount += 1
-        }
-        futureBulk.recover { case e: Throwable =>
-          recordCount = -1
-          ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-          val duration = Math.round(System.currentTimeMillis() - startTime)
-          errmsg = s"eric record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause} # took $duration ms"
-        }
-        futureBulk.onComplete {
-          case Success(_) =>
-            ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-            val duration = Math.round(System.currentTimeMillis() - startTime)
-            consoleLog("SUCCESS", s"eric file bulk insert to elasticsearch success: filename = $filenameTxt $recordCount records # took $duration ms")
-          case Failure(e) =>
-            recordCount = -1
-            ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-            val duration = Math.round(System.currentTimeMillis() - startTime)
-            consoleLog("ERROR", s"eric record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause} # took $duration ms")
-        }
+        val sleepMs = recordCount / 10
+        consoleLog("INFO", s"eric record: filename = $filenameTxt wait for $sleepMs ms")
+        Thread.sleep(sleepMs)
+
+        val duration = Math.round(System.currentTimeMillis() - startTime)
+        consoleLog("SUCCESS", s"eric record write to elasticsearch success: filename = $filenameTxt [$recordCount / $i] records # took $duration ms")
       } catch { case e: Throwable =>
         recordCount = -1
-        ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
         errmsg = s"eric record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause}"
         consoleLog("ERROR", errmsg)
       }
     } else {
       recordCount = -1
-      ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
       errmsg = s"eric record write to elasticsearch error: filename = $filenameTxt, elasticsearch connect error"
       consoleLog("ERROR", errmsg)
     }
+    recordCount
   }
 
-  def esBulkInsertHuawei(filenameTxt: String, dir: String, filename: String, ref: ActorRef): Unit = {
-    implicit val ec = system.dispatcher
-
+  def esBulkInsertHuawei(filenameTxt: String): Int = {
     val startTime = System.currentTimeMillis()
     var recordCount = 0
     var errmsg = ""
     if (esClient != null) {
       try {
-        val headerHeadStr = "SERIAL_NO,HLR_INDEX,OPERATOR_NAME,OPERATION_TIME"
-        val headerLastStr = "CMDRESULT,BATCH_TASK_ID,COMMAND_NO,MSG_TYPE,IMSI_NO,MSISDN_NO,ERRORCODE"
-        val source = FileIO.fromPath(Paths.get(filenameTxt)).via(
-          Framing.delimiter(ByteString("\n"), maximumFrameLength = 1024 * 4)
-        ).map(_.utf8String).map { str =>
-          val arr = str.split(",")
-          val arrLen = arr.length
-          var record = Map[String, String]()
-          val headerLastLength = headerLastStr.split(",").length
-          headerHeadStr.split(",").zipWithIndex.foreach { case (key, i) =>
-            record = record ++ Map(key -> arr(i))
-            arr(i) = ""
+        val in = new FileReader(filenameTxt)
+        val records = CSVFormat.RFC4180.parse(in)
+        val headerHeads = "SERIAL_NO,HLR_INDEX,OPERATOR_NAME,OPERATION_TIME".split(",").zipWithIndex
+        val headerLasts = "CMDRESULT,BATCH_TASK_ID,COMMAND_NO,MSG_TYPE,IMSI_NO,MSISDN_NO,ERRORCODE".split(",").zipWithIndex
+        val headerHeadLength = headerHeads.length
+        val headerLastLength = headerLasts.length
+        var i = 0
+        records.foreach { csvRecord =>
+          i += 1
+          if (i % 10000 == 0) {
+            consoleLog("DEBUG", s"process file record $i")
           }
-          headerLastStr.split(",").zipWithIndex.foreach { case (key, i) =>
-            val index = arrLen - headerLastLength + i
-            record = record ++ Map(key -> arr(index))
-            arr(index) = ""
+          if (i != 1) {
+            val arr = csvRecord.toArray
+            val arrLen = arr.length
+            var record = Map[String, String]()
+            if (arrLen > headerHeadLength) {
+              headerHeads.foreach { case (key, index) =>
+                record = record ++ Map(key -> arr(index))
+                arr(index) = ""
+              }
+              headerLasts.foreach { case (key, index) =>
+                val idx = arrLen - headerLastLength + index
+                record = record ++ Map(key -> arr(idx))
+                arr(idx) = ""
+              }
+              val mmlcmd = arr.filter(_ != "").mkString(",")
+              record = record ++ Map("MML_COMMAND" -> mmlcmd)
+            }
+            val filter = record.containsKey("MML_COMMAND") && (
+              (record("MML_COMMAND").startsWith("MOD TPLEPSSER:ISDN=") && record("MML_COMMAND").indexOf("TPLID=") > -1) ||
+                (record("MML_COMMAND").startsWith("MOD EPSSER:ISDN=") && record("MML_COMMAND").indexOf("PROV=ADDPDNCNTX,EPSAPNQOSTPLID=") > -1)
+              )
+            if (filter) {
+              val jsonContent: XContentBuilder = jsonBuilder().startObject()
+              record.foreach { case (k, v) =>
+                jsonContent.field(k, v)
+              }
+              jsonContent.endObject()
+              esBulkRef ! (configEsTypeNameHuawei, jsonContent)
+              recordCount += 1
+            }
           }
-          val mmlcmd = arr.filter(_ != "").mkString(",")
-          record = record ++ Map("MML_COMMAND" -> mmlcmd)
-          record
-        }.filter { record =>
-          (record("MML_COMMAND").startsWith("MOD TPLEPSSER:ISDN=") && record("MML_COMMAND").indexOf("TPLID=") > -1) ||
-            (record("MML_COMMAND").startsWith("MOD EPSSER:ISDN=") && record("MML_COMMAND").indexOf("PROV=ADDPDNCNTX,EPSAPNQOSTPLID=") > -1)
         }
-        val futureBulk = source.runForeach { record =>
-          val jsonContent: XContentBuilder = jsonBuilder().startObject()
-          record.foreach { case (k, v) =>
-            jsonContent.field(k, v)
-          }
-          jsonContent.endObject()
-          esBulkRef ! (configEsTypeNameHuawei, jsonContent)
-          recordCount += 1
-        }
-        futureBulk.recover { case e: Throwable =>
-          recordCount = -1
-          ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-          val duration = Math.round(System.currentTimeMillis() - startTime)
-          errmsg = s"huawei record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause} # took $duration ms"
-        }
-        futureBulk.onComplete {
-          case Success(_) =>
-            ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-            val duration = Math.round(System.currentTimeMillis() - startTime)
-            consoleLog("SUCCESS", s"huawei file bulk insert to elasticsearch success: filename = $filenameTxt $recordCount records # took $duration ms")
-          case Failure(e) =>
-            recordCount = -1
-            ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-            val duration = Math.round(System.currentTimeMillis() - startTime)
-            consoleLog("ERROR", s"huawei record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause} # took $duration ms")
-        }
+        records.close()
+        in.close()
+
+        val sleepMs = recordCount / 10
+        consoleLog("INFO", s"huawei record: filename = $filenameTxt wait for $sleepMs ms")
+        Thread.sleep(sleepMs)
+
+        val duration = Math.round(System.currentTimeMillis() - startTime)
+        consoleLog("SUCCESS", s"huawei record write to elasticsearch success: filename = $filenameTxt [$recordCount / $i] records # took $duration ms")
       } catch { case e: Throwable =>
         recordCount = -1
-        ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-        errmsg = s"huawei record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause}"
+        errmsg = s"huawei record write to elasticsearch error: filename = $filenameTxt, ${e.getClass}, ${e.getMessage}, ${e.getCause}, ${e.getStackTrace.mkString("\n")}"
         consoleLog("ERROR", errmsg)
       }
     } else {
       recordCount = -1
-      ref ! DirectiveRecordCount(dir, filename, filenameTxt, recordCount)
-      errmsg = s"Huawei record write to elasticsearch error: filename = $filenameTxt, elasticsearch connect error"
+      errmsg = s"hauwei record write to elasticsearch error: filename = $filenameTxt, elasticsearch connect error"
       consoleLog("ERROR", errmsg)
     }
+    recordCount
   }
 
   def esQuery(searchType: Int = 0, fields: Array[String] = Array[String](), page: Int = 1, count: Int = 10, descSort: Boolean = true, fromStartTime: String = "", toStartTime: String = "", termFields: Array[(String, String)] = Array[(String, String)]()): JsValue = {

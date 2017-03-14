@@ -24,11 +24,17 @@ import scala.async.Async._
   */
 object HssRestful extends App {
 
-  val hostName = InetAddress.getLocalHost.getHostName
-  val configHttp = ConfigFactory.parseString(s"""akka.remote.netty.tcp.hostname="$hostName"""")
-    .withFallback(ConfigFactory.parseString(s"akka.remote.netty.tcp.port=0"))
-    .withFallback(config)
-  implicit val system = ActorSystem("hss-cluster", configHttp)
+  val httpConfigStr = s"""
+    akka.http {
+      server {
+        remote-address-header = on
+        raw-request-uri-header = on
+      }
+    }
+  """
+
+  val configHttp = ConfigFactory.parseString(httpConfigStr)
+  implicit val system = ActorSystem("hss-restful", configHttp)
   implicit val materializer = ActorMaterializer()
   implicit val ec = system.dispatcher
 

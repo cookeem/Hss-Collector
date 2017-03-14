@@ -43,22 +43,21 @@ HSS-Collector
 cd /Volumes/Share/Scala_program/HssCollector
 redis-server &
 zkServer.sh start
+sleep 5
+zkServer.sh status
+sleep 5
 kafka-server-start.sh /Volumes/Share/hadoop/kafka-0.10.1.1/config/server-0.properties &
 elasticsearch -d -Ecluster.name=es-cluster
 sleep 10
 curl localhost:9200
 
-# 启动master。master用于获取ftp目录下的文件夹（注意，只能启动一个）
-
-sbt "run-main cmgd.zenghj.hss.HssCollector -s master -d download"
-
 # 启动listfile。listfile用于获取ftp目录下的文件清单，并且把新的文件清单写入redis和kafka（可以启动多个）
 
-sbt "run-main cmgd.zenghj.hss.HssCollector -s listfile"
+sbt "run-main cmgd.zenghj.hss.AppListFile"
 
 # 启动getfile。getfile用于从kafka读取文件清单，获取ftp文件，并且把文件写入到es（可以启动多个）
 
-sbt "run-main cmgd.zenghj.hss.HssCollector -s getfile -d download-0"
+sbt "run-main cmgd.zenghj.hss.AppGetFile"
 
 ## 异常恢复说明:
 当getfile节点出现异常的时候, 会导致出现异常的getfile节点已经从kafka获取的文件列表的处理会终止, 导致部分文件未处理.
