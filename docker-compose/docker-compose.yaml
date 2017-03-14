@@ -1,0 +1,180 @@
+version: '2'
+networks:
+  hssnet:
+    driver: bridge
+
+services:
+  es-0:
+    image: "k8s-registry:5000/docker.elastic.co/elasticsearch/elasticsearch:5.2.0"
+    hostname: es-0
+    expose:
+    - "9200"
+    - "9300"
+    volumes:
+    - /data/es-0:/usr/share/elasticsearch/data
+    environment:
+    - "ES_JAVA_OPTS=-Xms16g -Xmx16g"
+    - cluster.name=es-cluster
+    - node.name=es-0
+    - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    # mem_limit: 4g
+    networks: [ hssnet ]
+
+  es-1:
+    image: "k8s-registry:5000/docker.elastic.co/elasticsearch/elasticsearch:5.2.0"
+    hostname: es-1
+    expose:
+    - "9200"
+    - "9300"
+    volumes:
+    - /data/es-1:/usr/share/elasticsearch/data
+    environment:
+    - "ES_JAVA_OPTS=-Xms16g -Xmx16g"
+    - cluster.name=es-cluster
+    - node.name=es-1
+    - bootstrap.memory_lock=true
+    - "discovery.zen.ping.unicast.hosts=es-0"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+    - IPC_LOCK
+    depends_on:
+    - es-0 
+    # mem_limit: 4g  
+    networks: [ hssnet ]
+
+  redis-0:
+    image: "k8s-registry:5000/redis:latest"
+    hostname: redis-0
+    ports:
+    - "7000:7000"
+    volumes:
+    - /data/redis-0:/redis-data
+    - /data/hss-cluster/docker-compose/redis-0.conf:/redis-data/redis-0.conf
+    command: /usr/local/bin/redis-server /redis-data/redis-0.conf
+    # mem_limit: 512m  
+    networks: [ hssnet ]
+
+  zk-0:
+    image: "k8s-registry:5000/zookeeper:latest"
+    hostname: zk-0
+    ports:
+    - "2181:2181"
+    volumes:
+    - /data/zk-0/data:/zk-data
+    - /data/zk-0/logs:/zk-logs
+    environment:
+    - "ZOO_MY_ID=0"
+    - "ZOO_SERVERS=server.0=zk-0:2888:3888"
+    - "ZOO_DATA_DIR=/zk-data"
+    - "ZOO_LOGS_DIR=/zk-logs"
+    # mem_limit: 1g  
+    networks: [ hssnet ]
+
+  kafka-0:
+    image: "k8s-registry:5000/zookeeper:latest"
+    hostname: kafka-0
+    ports:
+    - "9092:9092"
+    volumes:
+    - /data/hss-cluster/docker-compose/kafka-0.10.1.1:/kafka-bin
+    - /data/hss-cluster/docker-compose/kafka-0.conf:/kafka-config/kafka.conf
+    - /data/kafka-0:/kafka-logs
+    command: /kafka-bin/bin/kafka-server-start.sh /kafka-config/kafka.conf
+    depends_on:
+    - zk-0
+    # mem_limit: 1g  
+    networks: [ hssnet ]
+
+  hss-restful:
+    image: "k8s-registry:5000/alpine-jdk:latest"
+    hostname: hss-restful
+    ports:
+    - "9870:9870"
+    volumes:
+    - /data/hss-cluster/hss-bin:/hss-bin
+    - /data/hss-cluster/docker-compose/application.conf:/hss-bin/conf/application.conf
+    - /data/hss-cluster/scala-2.11.8:/scala-2.11.8
+    working_dir: /hss-bin
+    command: ./run.sh cmgd.zenghj.hss.HssRestful
+    depends_on:
+    - es-0
+    - es-1
+    # mem_limit: 512m  
+    networks: [ hssnet ]
+
+  hss-listfile-0:
+    image: "k8s-registry:5000/alpine-jdk:latest"
+    hostname: hss-listfile-0
+    volumes:
+    - /data/hss-cluster/hss-bin:/hss-bin
+    - /data/hss-cluster/docker-compose/application.conf:/hss-bin/conf/application.conf
+    - /data/hss-cluster/scala-2.11.8:/scala-2.11.8
+    working_dir: /hss-bin
+    command: ./run.sh cmgd.zenghj.hss.AppListFile
+    # command: tail -f /etc/hosts
+    depends_on:
+    - es-0
+    - es-1
+    - redis-0
+    - kafka-0
+    # - hss-master
+    # mem_limit: 512m  
+    networks: [ hssnet ]
+
+  hss-getfile-0:
+    image: "k8s-registry:5000/alpine-jdk:latest"
+    hostname: hss-getfile-0
+    volumes:
+    - /data/hss-cluster/hss-bin:/hss-bin
+    - /data/hss-cluster/docker-compose/application.conf:/hss-bin/conf/application.conf
+    - /data/hss-cluster/scala-2.11.8:/scala-2.11.8
+    # environment:
+    # - "JAVA_OPTS=-Xms2g -Xmx2g"
+    working_dir: /hss-bin
+    command: ./run.sh cmgd.zenghj.hss.AppGetFile
+    # command: tail -f /etc/hosts
+    depends_on:
+    - es-0
+    - es-1
+    - redis-0
+    - kafka-0
+    # - hss-master
+    # mem_limit: 2G  
+    networks: [ hssnet ]
+
+  hss-getfile-1:
+    image: "k8s-registry:5000/alpine-jdk:latest"
+    hostname: hss-getfile-1
+    volumes:
+    - /data/hss-cluster/hss-bin:/hss-bin
+    - /data/hss-cluster/docker-compose/application.conf:/hss-bin/conf/application.conf
+    - /data/hss-cluster/scala-2.11.8:/scala-2.11.8
+    # environment:
+    # - "JAVA_OPTS=-Xms2g -Xmx2g"
+    working_dir: /hss-bin
+    command: ./run.sh cmgd.zenghj.hss.AppGetFile
+    # command: tail -f /etc/hosts
+    depends_on:
+    - es-0
+    - es-1
+    - redis-0
+    - kafka-0
+    # - hss-master
+    # mem_limit: 2G  
+    networks: [ hssnet ]
+
