@@ -301,36 +301,34 @@ object EsUtils {
           if (i % 10000 == 0) {
             consoleLog("DEBUG", s"process file record $i")
           }
-          if (i != 1) {
-            val arr = csvRecord.toArray
-            val arrLen = arr.length
-            var record = Map[String, String]()
-            if (arrLen > headerHeadLength) {
-              headerHeads.foreach { case (key, index) =>
-                record = record ++ Map(key -> arr(index))
-                arr(index) = ""
-              }
-              headerLasts.foreach { case (key, index) =>
-                val idx = arrLen - headerLastLength + index
-                record = record ++ Map(key -> arr(idx))
-                arr(idx) = ""
-              }
-              val mmlcmd = arr.filter(_ != "").mkString(",")
-              record = record ++ Map("MML_COMMAND" -> mmlcmd)
+          val arr = csvRecord.toArray
+          val arrLen = arr.length
+          var record = Map[String, String]()
+          if (arrLen > headerHeadLength + headerLastLength) {
+            headerHeads.foreach { case (key, index) =>
+              record = record ++ Map(key -> arr(index))
+              arr(index) = ""
             }
-            val filter = record.containsKey("MML_COMMAND") && (
-              (record("MML_COMMAND").startsWith("MOD TPLEPSSER:ISDN=") && record("MML_COMMAND").indexOf("TPLID=") > -1) ||
-                (record("MML_COMMAND").startsWith("MOD EPSSER:ISDN=") && record("MML_COMMAND").indexOf("PROV=ADDPDNCNTX,EPSAPNQOSTPLID=") > -1)
-              )
-            if (filter) {
-              val jsonContent: XContentBuilder = jsonBuilder().startObject()
-              record.foreach { case (k, v) =>
-                jsonContent.field(k, v)
-              }
-              jsonContent.endObject()
-              esBulkRef ! (configEsTypeNameHuawei, jsonContent)
-              recordCount += 1
+            headerLasts.foreach { case (key, index) =>
+              val idx = arrLen - headerLastLength + index
+              record = record ++ Map(key -> arr(idx))
+              arr(idx) = ""
             }
+            val mmlcmd = arr.filter(_ != "").mkString(",")
+            record = record ++ Map("MML_COMMAND" -> mmlcmd)
+          }
+          val filter = record.containsKey("MML_COMMAND") && (
+            (record("MML_COMMAND").startsWith("MOD TPLEPSSER:ISDN=") && record("MML_COMMAND").indexOf("TPLID=") > -1) ||
+              (record("MML_COMMAND").startsWith("MOD EPSSER:ISDN=") && record("MML_COMMAND").indexOf("PROV=ADDPDNCNTX,EPSAPNQOSTPLID=") > -1)
+            )
+          if (filter) {
+            val jsonContent: XContentBuilder = jsonBuilder().startObject()
+            record.foreach { case (k, v) =>
+              jsonContent.field(k, v)
+            }
+            jsonContent.endObject()
+            esBulkRef ! (configEsTypeNameHuawei, jsonContent)
+            recordCount += 1
           }
         }
         records.close()
@@ -467,7 +465,7 @@ object EsUtils {
         success = 1
       } catch {
         case e: Throwable =>
-          consoleLog("ERROR", s"esQuery error: fields = ${fields.mkString(",")}, fromStartTime = $fromStartTime, toStartTime = $toStartTime, termFields = ${termFields.mkString(",")}. ${e.getClass}, ${e.getMessage}, ${e.getCause}")
+          consoleLog("ERROR", s"esQuery error: fields = ${fields.mkString(",")}, fromStartTime = $fromStartTime, toStartTime = $toStartTime, termFields = ${termFields.mkString(",")}. ${e.getClass}, ${e.getMessage}, ${e.getCause}. \n ${e.getStackTrace.mkString("\n")}")
           errmsg = s"esQuery error: fields = ${fields.mkString(",")}, fromStartTime = $fromStartTime, toStartTime = $toStartTime, termFields = ${termFields.mkString(",")}."
       }
     } else {

@@ -135,10 +135,9 @@ object AppGetFile extends App {
         Seq("ls", tmpdir),
         new File(path)
       ).!!.replace("\n", "")
-      Process(
-        Seq("mv", s"$tmpdir/$extractFileName", s"./"),
-        new File(path)
-      ).!!
+
+      s"grep -E TPLEPSSER|EPSSER $path$tmpdir/$extractFileName" #> new File(s"$path$extractFileName") !
+
       Process(
         Seq("rm", "-rf", s"$tmpdir"),
       new File(path)
