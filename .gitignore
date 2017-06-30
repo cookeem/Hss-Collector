@@ -82,3 +82,6 @@ project/project/
 project/target/
 src/main/resources/
 hss-lib/
+b.txt
+dump.rdb
+zookeeper.out
