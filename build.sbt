@@ -53,3 +53,4 @@ libraryDependencies ++= {
 //  "-Dhttp.proxyHost=cmproxy-sgs.gmcc.net",
 //  "-Dhttp.proxyPort=8081"
 //)
+
